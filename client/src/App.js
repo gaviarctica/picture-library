@@ -433,30 +433,11 @@ class App extends Component {
   categories = ['Uusimmat', 'Kalenteri'];
 
   fetchData() {
-    if(this.state.loggedIn){
-      var cam;
-      if(this.state.camera === 'Kaikki') {
-        cam = '';
-      } else {
-        cam = '&camera=' + this.state.camera;
-      }
-
-      
-    }
-  }
-
-  componentWillMount() {
-    // Check if we have a token
-    if(localStorage.getItem('jwt') != null) {
-      this.setState({
-        loggedIn: true
-      });
-    }
-
     const token = localStorage.getItem('jwt');
     fetch('api/cameras', {headers: {'x-access-token': token}})
     .then(response => response.json())
     .then(responseJson => {
+      if(!tokenOk(responseJson)) {this.logOut(); return;}
       var cameras = [];
       cameras.push('Kaikki');
       responseJson.forEach(function(camera) {
@@ -470,8 +451,11 @@ class App extends Component {
     });
   }
 
-  componentDidMount() {
-    this.fetchData();
+  componentWillMount() {
+    // Check if we have a token
+    if(localStorage.getItem('jwt') != null) {
+      this.loginSuccess();
+    }
   }
 
   handleCameraChange(newCam) {
@@ -541,6 +525,15 @@ class App extends Component {
 
 
 export default App;
+
+
+
+function tokenOk(response) {
+  if(response.success === false && response.message === 'Failed to authenticate token.') {
+    return false;
+  }
+  return true;
+}
 
 
 
