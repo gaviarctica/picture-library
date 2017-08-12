@@ -7,15 +7,6 @@ import loadingSpinner from './loading.svg';
 
 const formatter = buildFormatter(finStrings);
 
-function Alert(props) {
-  return(
-    <div className="alert alert-danger alert-dismissible" role="alert">
-      <button type="button" className="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-      {props.message}
-    </div>
-  )
-}
-
 function ImageCard(props) {
   var title;
   if(props.timeago) {
@@ -58,6 +49,12 @@ class Day extends Component {
     this.openClose = this.openClose.bind(this);
   }
 
+  componentWillReceiveProps() {
+    this.setState({
+      open: false
+    });
+  }
+
   openClose() {
     this.setState((prevState) => ({
       open: !prevState.open
@@ -75,11 +72,11 @@ class Day extends Component {
 
     return(
       <div>
-        <h4 onClick={this.openClose}>
+        <h4 className="calendar-header" onClick={this.openClose}>
           {this.props.day}.{this.props.month + 1}.
           <small>{' ' + this.props.pics.length + ' kuvaa'}</small>
         </h4>
-        <div>
+        <div className="images-container">
           {imgs.map(pic => 
             <ImageCard key={pic._id}
               pic={pic}
@@ -103,6 +100,12 @@ class Month extends Component {
     this.openClose = this.openClose.bind(this);
   }
 
+  componentWillReceiveProps() {
+    this.setState({
+      open: true
+    });
+  }
+
   openClose() {
     this.setState((prevState) => ({
       open: !prevState.open
@@ -114,7 +117,7 @@ class Month extends Component {
     const days = this.props.days;
     return(
       <div>
-        <h3 onClick={this.openClose}>{month}</h3>
+        <h3 className="calendar-header" onClick={this.openClose}>{month}</h3>
         {this.state.open ?
           days.map(day =>
             <Day key={day.day}
@@ -182,7 +185,7 @@ class ImageCalendar extends Component {
 
   render(){
     return(
-      <div className="col-md-12">
+      <div>
         {this.state.calendar.map(year =>
             <Year key={year.year}
               year={year.year}
@@ -221,7 +224,7 @@ class NewImages extends Component {
 
   render() {
     return(
-      <div className="col-md-12">
+      <div className="images-container">
         {this.state.images.map(pic =>
             <ImageCard key={pic._id}
               pic={pic}
@@ -253,7 +256,8 @@ class LoginForm extends Component {
     const name = target.name;
 
     this.setState({
-      [name]: value
+      [name]: value,
+      message: ''
     });
   }
 
@@ -284,6 +288,7 @@ class LoginForm extends Component {
 
       // Inform parent of successful login
       this.props.onSuccess();
+
     } else {
       this.setState({
         message: response.message
@@ -293,11 +298,11 @@ class LoginForm extends Component {
 
   render() {
     return (
-      <div>
-        {this.state.message !== '' ? <Alert message={this.state.message} /> : ""}
+      <div className="login-view">
         <div className="login-container">
           <form className="form-signin">
             <h2 className="form-signin-heading">Kirjaudu sisään</h2>
+            <p id="login-message">{this.state.message !== '' ? this.state.message : <br />}</p>
             <label htmlFor="username" className="sr-only">Käyttäjänimi:</label>
             <input 
               className="form-control"
@@ -417,6 +422,15 @@ class Navbar extends Component {
 
 
 
+function Footer(props) {
+  return(
+    <div id="footer">
+    </div>
+  );
+}
+
+
+
 class App extends Component {
   constructor(props) {
     super(props);
@@ -497,16 +511,19 @@ class App extends Component {
 
       content = (
         <div>
-          <Navbar 
-            cameras={this.state.cameras}
-            currentCam={this.state.currentCam}
-            categories={this.categories}
-            currentCat={this.state.currentCat}
-            cameraChanged={this.handleCameraChange.bind(this)}
-            categoryChanged={this.handleCategoryChange.bind(this)}
-            logout={this.logOut.bind(this)} />
+          <div id="app-content">
+            <Navbar 
+              cameras={this.state.cameras}
+              currentCam={this.state.currentCam}
+              categories={this.categories}
+              currentCat={this.state.currentCat}
+              cameraChanged={this.handleCameraChange.bind(this)}
+              categoryChanged={this.handleCategoryChange.bind(this)}
+              logout={this.logOut.bind(this)} />
 
-          {bodyContent}
+            {bodyContent}
+          </div>
+          <Footer />
         </div>
       );
     } else {
@@ -514,7 +531,7 @@ class App extends Component {
     }
 
     return (
-      <div className="row">
+      <div>
         <img src={loadingSpinner} className="preload" alt="" /> {/* Preload loading animation */}
         {content}
       </div>
