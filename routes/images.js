@@ -45,7 +45,7 @@ router.get('/', function(req, res, next) {
 // Params:
 //    n: the amount of pictures
 //    camera: camera, empty for all cameras
-//    TODO: before: get images before this id (for loading more)
+//    before: get images before this id (for loading more)
 router.get('/new', function(req, res, next) {
   // Auth required
   token.check(req, res, function(success) {
