@@ -31,6 +31,7 @@ function ImageCard(props) {
         alt={props.pic.date}
         offset={300} />
       <div className="imagecard-title">
+        {props.timeago ? '#' + (props.num + 1) + ' - ' : ''}
         {title}
       </div>
     </div>
@@ -214,22 +215,41 @@ class NewImages extends Component {
     this.fetchData(nextProps);
   }  
 
-  fetchData(propsUsed) {
-    // Fetch data
+  fetchData(propsUsed, loadMore) {
     const token = localStorage.getItem('jwt');
-    fetch('api/images/new?n=30&camera=' + propsUsed.camera, {headers: {'x-access-token': token}})
-      .then(response => response.json())
-      .then(responseJson => this.setState({ images: responseJson }));
+
+    // Fetch data
+    if(!loadMore) {
+      fetch('api/images/new?n=20&camera=' + propsUsed.camera, {headers: {'x-access-token': token}})
+        .then(response => response.json())
+        .then(responseJson => this.setState({ images: responseJson }));
+
+    } else {
+      var before = '&before=' + this.state.images[this.state.images.length - 1]._id;
+      fetch('api/images/new?n=20&camera=' + propsUsed.camera + before, {headers: {'x-access-token': token}})
+        .then(response => response.json())
+        .then(responseJson => this.setState(prevState => ({ images: prevState.images.concat(responseJson) })));
+    }
+  }
+
+  loadMoreImages() {
+    this.fetchData(this.props, true);
   }
 
   render() {
     return(
-      <div className="images-container">
-        {this.state.images.map(pic =>
-            <ImageCard key={pic._id}
-              pic={pic}
-              timeago={true} />
+      <div>
+        <div className="images-container">
+          {this.state.images.map((pic, index) =>
+              <ImageCard key={pic._id}
+                pic={pic}
+                timeago={true}
+                num={index}/>
           )}
+        </div>
+        <div id="morebutton-wrapper">
+            <button id="morebutton" onClick={this.loadMoreImages.bind(this)}>Lisää</button>
+        </div>
       </div>
     );
   }

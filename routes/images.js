@@ -10,6 +10,8 @@ var token = require('./token');
 
 
 // GET image paths and dates as JSON
+// Params:
+//    camera: camera, empty for all cameras
 router.get('/', function(req, res, next) {
   // Auth required
   token.check(req, res, function(success) {
@@ -39,7 +41,11 @@ router.get('/', function(req, res, next) {
 
 
 
-// GET newest images' paths and dates as JSON 
+// GET newest images' paths and dates as JSON
+// Params:
+//    n: the amount of pictures
+//    camera: camera, empty for all cameras
+//    TODO: before: get images before this id (for loading more)
 router.get('/new', function(req, res, next) {
   // Auth required
   token.check(req, res, function(success) {
@@ -53,7 +59,12 @@ router.get('/new', function(req, res, next) {
         images.sort(function(a, b) {
           return b.date - a.date;
         });
-        res.json(images.slice(0, amount));
+        if(!req.query.before) {
+          res.json(images.slice(0, amount));
+        } else {
+          var start = indexByAttr(images, '_id', req.query.before, true);
+          res.json(images.slice(start + 1, start + parseInt(amount) + 1));
+        }
       });
       
     } else {
@@ -62,7 +73,12 @@ router.get('/new', function(req, res, next) {
         images.sort(function(a, b) {
           return b.date - a.date;
         });
-        res.json(images.slice(0, amount));
+        if(!req.query.before) {
+          res.json(images.slice(0, amount));
+        } else {
+          var start = indexByAttr(images, '_id', req.query.before, true);
+          res.json(images.slice(start + 1, start + parseInt(amount) + 1));
+        }
       });
     }
 
@@ -71,7 +87,9 @@ router.get('/new', function(req, res, next) {
 
 
 
-// GET image paths and dates organized by date as JSON 
+// GET image paths and dates organized by date as JSON
+// Params:
+//    order: 'descending' for descending order
 router.get('/organized', function(req, res, next) {
   // Auth required
   token.check(req, res, function(success) {
@@ -186,8 +204,14 @@ function sortByDate(images) {
 
 
 
-function indexByAttr(arr, attr, value) {
+function indexByAttr(arr, attr, value, compareStrings) {
+  if(compareStrings) {
+    value = value.toString();
+  }
   for(var i = 0; i < arr.length; i++) {
+    if(compareStrings && arr[i][attr].toString() === value) {
+      return i;
+    }
     if(arr[i][attr] === value) {
       return i;
     }
