@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto+Condensed');
+
 :root {
 	/* Variables */
 	--bg-color: #DDD;
@@ -11,6 +13,10 @@
 	--box-shadow-level-1: 0 0 3px -1px #222;
 	--box-shadow-level-2: 0 0 5px -1px #222;
 	--box-shadow-level-3: 0 0 7px -1px #222;
+}
+
+#root {
+	font-family: 'Roboto Condensed', sans-serif;
 }
 
 #app-content {
@@ -201,7 +207,7 @@
 .imagecard {
 	flex-grow: 1;
 	margin: 3.5px;
-	flex-basis: 256px;
+	flex-basis: 300px;
 	height: auto;
 	box-shadow: var(--box-shadow-level-1);
 	border-radius: var(--imagecard-border-radius);
@@ -250,6 +256,19 @@
 #morebutton:active {
 	background-color: var(--navbar-color);
 	color: var(--navbar-text-color);
+}
+
+.images-divider {
+	flex-grow: 1;
+	flex-basis: 100%;
+	margin: 10px 0 0 0;
+	font-size: 2em;
+	text-align: center;
+}
+
+.images-divider-minor {
+	font-size: 1.5em;
+	margin: 5px 0 5px 0;
 }
 
 

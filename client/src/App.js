@@ -40,6 +40,58 @@ function ImageCard(props) {
 
 
 
+function ImagesContainer(props) {
+  var elements = [];
+  var picDate;
+  var day;
+  var dayChanged = false;
+  var hour;
+
+  // Render day and hour changes between images
+  props.images.forEach(function(pic, index) {
+    dayChanged = false;
+    picDate = new Date(pic.date);
+
+    if(picDate.getDate() !== day) {
+      dayChanged = true;
+      day = picDate.getDate();
+      
+      // New divider
+      elements.push(
+        <div key={'divider-day ' + picDate} className="images-divider">
+          {getNaturalDate(picDate)}
+        </div>
+      );
+    }
+
+    if(picDate.getHours() !== hour || dayChanged) {
+      hour = picDate.getHours();
+
+      // New divider
+      elements.push(
+        <div key={'divider-hour ' + picDate} className="images-divider images-divider-minor">
+          {'klo ' + (hour.toString().length === 1 ? '0' + hour.toString() : hour.toString())}
+        </div>
+      );
+    }
+
+    elements.push(
+      <ImageCard key={pic._id}
+        pic={pic}
+        timeago={props.timeago}
+        num={index} />
+    );
+  });
+
+  return(
+    <div className="images-container">
+      {elements}
+    </div>
+  )
+}
+
+
+
 class Day extends Component {
   constructor(props) {
     super(props);
@@ -77,13 +129,7 @@ class Day extends Component {
           {this.props.day}.{this.props.month + 1}.
           <small>{' ' + this.props.pics.length + ' kuvaa'}</small>
         </h4>
-        <div className="images-container">
-          {imgs.map(pic => 
-            <ImageCard key={pic._id}
-              pic={pic}
-              timeago={false} />
-          )}
-        </div>
+        <ImagesContainer images={imgs} timeago={false} />
       </div>
     );
   }
@@ -239,14 +285,7 @@ class NewImages extends Component {
   render() {
     return(
       <div>
-        <div className="images-container">
-          {this.state.images.map((pic, index) =>
-              <ImageCard key={pic._id}
-                pic={pic}
-                timeago={true}
-                num={index}/>
-          )}
-        </div>
+        <ImagesContainer images={this.state.images} timeago={true} />
         <div id="morebutton-wrapper">
             <button id="morebutton" onClick={this.loadMoreImages.bind(this)}>Lisää</button>
         </div>
@@ -456,8 +495,6 @@ class App extends Component {
     super(props);
     this.state = {
       loggedIn: false,
-      calendar: [],
-      newest: [],
       cameras: [],
       currentCam: 'Kaikki',
       currentCat: 'Uusimmat'
@@ -496,12 +533,16 @@ class App extends Component {
     this.setState({
       currentCam: newCam
     });
+
+    document.body.scrollTop = 0;
   }
 
   handleCategoryChange(newCat) {
     this.setState({
       currentCat: newCat
     });
+
+    document.body.scrollTop = 0;
   }
 
   loginSuccess() {
