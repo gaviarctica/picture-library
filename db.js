@@ -8,14 +8,19 @@ var dirTree = require('directory-tree');
 
 exports.updateImages = function() {
   console.log(ts() + 'Updating image collection.');
+  if(config.removeCorruptedImages){
+    console.log(ts() + 'config.removeCorruptedImages is set to true.');
+  }  
   const updateStarted = new Date();
 
   const path = 'public';
   var imageCount = 0;
   var imagesAdded = 0;
   var imagesRemoved = 0;
+  var corruptedRemoved = 0;
   var imagesToInsert = [];
   var imagesToRemove = [];
+  var imagesToUnlink = [];
 
   var cameras = [];
 
@@ -49,36 +54,83 @@ exports.updateImages = function() {
           cameras.push(camera);
         }
 
-        var newImgInDir = {
-          camera: camera,
-          name: item.path.split('/')[5],
-          path: item.path,
-          thumbnailPath: '',
-          date: mtime,
-          size: size,
-          pinned: false
+        if(!config.removeCorruptedImages) {
+          var newImgInDir = {
+            camera: camera,
+            name: item.path.split('/')[5],
+            path: item.path,
+            thumbnailPath: '',
+            date: mtime,
+            size: size,
+            pinned: false
+          }
+
+          imgsInDir.push(newImgInDir);
+
+          ++imageCount;
+
+        } else{
+          if(config.corruptedImageSizeThreshold === undefined) {
+            throw new Error('config.corruptedImageSizeThreshold needs to be defined with removeCorruptedImages');
+          }
+
+          if(size < config.corruptedImageSizeThreshold) {
+            imagesToUnlink.push(item.path);
+
+          } else {
+            var newImgInDir = {
+              camera: camera,
+              name: item.path.split('/')[5],
+              path: item.path,
+              thumbnailPath: '',
+              date: mtime,
+              size: size,
+              pinned: false
+            }
+
+            imgsInDir.push(newImgInDir);
+
+            ++imageCount;
+          }          
         }
-
-        imgsInDir.push(newImgInDir);
-
-        ++imageCount;
       });
+
+      // Unlink (delete) corrupted images
+      if(config.removeCorruptedImages) {
+        corruptedRemoved = imagesToUnlink.length;
+
+        imagesToUnlink.forEach(function(imgPath) {
+          fs.unlink(path + imgPath);
+        });
+      }
 
       console.log(ts() + 'Images in Dir: ' + imgsInDir.length);
 
       // Check for images that need to be added to db
       var imgFound = false;
+      var imgsMatch = 0;
+
       for(var i = 0; i < imgsInDir.length; ++i) {
         imgFound = false;
+
         for(var j = 0; j < imgsInDb.length; ++j) {
           if(imgsInDir[i].path === imgsInDb[j].path) {
             imgFound = true;
+            ++imgsMatch;
+
             break;
           }
         }
+
         if(!imgFound){
           imagesToInsert.push(imgsInDir[i]);
         }
+      }
+
+      // If all images match, no need to check other way later
+      var allImgsMatch = false;
+      if(imgsInDir.length === imgsInDb.length === imgsMatch) {
+        allImgsMatch = true;
       }
 
       // If new images, insert, otherwise just continue
@@ -88,10 +140,10 @@ exports.updateImages = function() {
 
           imagesAdded = res.insertedCount;
 
-          updateImages2(db, updateStarted, imgsInDb, imgsInDir, imagesToRemove, imagesRemoved, imageCount, imagesAdded, imagesRemoved, cameras);                  
+          updateImages2(db, updateStarted, imgsInDb, imgsInDir, imagesToRemove, imagesRemoved, imageCount, imagesAdded, imagesRemoved, cameras, corruptedRemoved, allImgsMatch);                  
         });
       } else {
-        updateImages2(db, updateStarted, imgsInDb, imgsInDir, imagesToRemove, imagesRemoved, imageCount, imagesAdded, imagesRemoved, cameras);  
+        updateImages2(db, updateStarted, imgsInDb, imgsInDir, imagesToRemove, imagesRemoved, imageCount, imagesAdded, imagesRemoved, cameras, corruptedRemoved, allImgsMatch);
       }
     });    
   });
@@ -99,19 +151,25 @@ exports.updateImages = function() {
 
 
 
-function updateImages2(db, updateStarted, imgsInDb, imgsInDir, imagesToRemove, imagesRemoved, imageCount, imagesAdded, imagesRemoved, cameras) {
+function updateImages2(db, updateStarted, imgsInDb, imgsInDir, imagesToRemove, imagesRemoved, imageCount, imagesAdded, imagesRemoved, cameras, corruptedRemoved, allImgsMatch) {
   // Check for images that need to be removed from db
-  var imgFound = false;
-  for(var i = 0; i < imgsInDb.length; ++i) {
-    imgFound = false;
-    for(var j = 0; j < imgsInDir.length; ++j) {
-      if(imgsInDb[i].path === imgsInDir[j].path) {
-        imgFound = true;
-        break;
+  if(!allImgsMatch){
+    var imgFound = false;
+
+    for(var i = 0; i < imgsInDb.length; ++i) {
+      imgFound = false;
+
+      for(var j = 0; j < imgsInDir.length; ++j) {
+        if(imgsInDb[i].path === imgsInDir[j].path) {
+          imgFound = true;
+
+          break;
+        }
       }
-    }
-    if(!imgFound){
-      imagesToRemove.push(imgsInDb[i]._id);
+
+      if(!imgFound){
+        imagesToRemove.push(imgsInDb[i]._id);
+      }
     }
   }
 
@@ -137,7 +195,19 @@ function updateImages2(db, updateStarted, imgsInDb, imgsInDir, imagesToRemove, i
     db.collection('update').insertOne(newImgUpdate, function(err, res) {
       if (err) throw err;
 
-      console.log(ts() + 'Image collection update finished in ' + updateTime + ' seconds. Images: ' + imageCount + ', added: ' + imagesAdded + ', removed: ' + imagesRemoved);
+      console.log(ts() + 
+        'Image collection update finished in ' + 
+        updateTime + 
+        ' seconds. Images: ' + 
+        imageCount + 
+        ', added: ' + 
+        imagesAdded + 
+        ', removed: ' + 
+        imagesRemoved + 
+        ', corrupted unlinked: ' +
+        corruptedRemoved
+      );
+
       db.close();
 
       // Update cameras
@@ -204,6 +274,18 @@ function addCamera(cameraName) {
 
 
 exports.addImage = function(camera, name, path, thumbnailPath, date, size) {
+  if(config.removeCorruptedImages) {
+    if(config.corruptedImageSizeThreshold === undefined) {
+      throw new Error('config.corruptedImageSizeThreshold needs to be defined with removeCorruptedImages');
+    
+    } else if(size < config.corruptedImageSizeThreshold) {
+      fs.unlink('public' + path);
+      console.log(ts() + 'Image ' + path + ' corrupted. File removed.');
+
+      return;
+    }
+  }
+
   MongoClient.connect(dbUrl, function(err, db) {
     if (err) throw err;
 
@@ -237,6 +319,20 @@ exports.removeImage = function(path) {
       if (err) throw err;
       db.close();
       console.log(ts() + 'Image ' + path + ' removed from database.');
+    });
+  });
+}
+
+
+
+exports.getOneImage = function(query, callback) {
+  MongoClient.connect(dbUrl, function(err, db) {
+    if (err) throw err;
+
+    db.collection('image').findOne(query, function(err, res) {
+      if (err) throw err;
+      db.close();
+      callback(res);
     });
   });
 }

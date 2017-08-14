@@ -83,7 +83,12 @@ watcher
   })
   .on('unlink', function(path) {
     path = formatPath(path);
-    db.removeImage(path);
+    // No need to remove from db if it's not there
+    db.getOneImage({path: path}, function(image) {
+      if(image !== null) {
+        db.removeImage(path);
+      }
+    });
   })
   .on('error', function(error) {
     console.error('Error happened', error);

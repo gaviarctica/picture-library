@@ -55,7 +55,7 @@ function ImagesContainer(props) {
     if(picDate.getDate() !== day) {
       dayChanged = true;
       day = picDate.getDate();
-      
+
       // New divider
       elements.push(
         <div key={'divider-day ' + picDate} className="images-divider">
@@ -616,49 +616,12 @@ function tokenOk(response) {
 
 
 function getMonthNameFI(month) {
-  var monthName;
-  switch(month) {
-    case 0:
-      monthName = 'tammi';
-      break;
-    case 1:
-      monthName = 'helmi';
-      break;
-    case 2:
-      monthName = 'maalis';
-      break;
-    case 3:
-      monthName = 'huhti';
-      break;
-    case 4:
-      monthName = 'touko';
-      break;
-    case 5:
-      monthName = 'kesä';
-      break;
-    case 6:
-      monthName = 'heinä';
-      break;
-    case 7:
-      monthName = 'elo';
-      break;
-    case 8:
-      monthName = 'syys';
-      break;
-    case 9:
-      monthName = 'loka';
-      break;
-    case 10:
-      monthName = 'marras';
-      break;
-    case 11:
-      monthName = 'joulu';
-      break;
-    default:
-      monthName = '';
-  }
+  var monthNames = [
+    'tammi', 'helmi', 'maalis', 'huhti', 'touko', 'kesä',
+    'heinä', 'elo', 'syys', 'loka', 'marras', 'joulu'
+  ];
 
-  return monthName + 'kuu';
+  return monthNames[[month]] + 'kuu';
 }
 
 function getNaturalDate(date) {

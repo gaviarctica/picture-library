@@ -2,7 +2,7 @@
 
 :root {
 	/* Variables */
-	--bg-color: #DDD;
+	--bg-color: #CCC;
 	--navbar-height: 50px;
 	--navbar-color: #222;
 	--navbar-dropdown-color: #383838;
@@ -211,7 +211,8 @@
 	height: auto;
 	box-shadow: var(--box-shadow-level-1);
 	border-radius: var(--imagecard-border-radius);
-	background-color: #FFF;
+	background-color: #000;
+	position: relative;
 }
 
 .imagecard-title {
@@ -223,13 +224,16 @@
 	vertical-align: middle;
 	border-bottom-right-radius: var(--imagecard-border-radius);
 	border-bottom-left-radius: var(--imagecard-border-radius);
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	opacity: 0.8;
 }
 
 .img-cam {
 	width: 100%;
 	height: auto;
-	border-top-right-radius: var(--imagecard-border-radius);
-	border-top-left-radius: var(--imagecard-border-radius);
+	border-radius: var(--imagecard-border-radius);
 }
 
 #morebutton-wrapper {
@@ -281,6 +285,7 @@
 
 
 /* Media queries */
+/* Mobile */
 @media screen and (max-width: 768px) {
 	:root {
 		--imagecard-border-radius: 4px;
