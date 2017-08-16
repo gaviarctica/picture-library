@@ -198,10 +198,60 @@
 
 
 /* Image rules */
-.images-container {
+.images-container, .image-groups-container {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: flex-start;
+}
+
+.image-group {
+	flex-grow: 1;
+	flex-basis: 300px;
+}
+
+.image-group:hover {
+	cursor: pointer;
+}
+
+.image-group-expanded {
+	background-color: #7a7a7a;
+	padding: 0 5px 10px 5px;
+	margin-top: 30px;
+	margin-bottom: 30px;
+	border-radius: var(--imagecard-border-radius);
+	box-shadow: var(--box-shadow-level-3);
+}
+
+.image-group-expanded-header {
+	line-height: 40px;
+	vertical-align: middle;
+	padding: 0 10px 0 20px;
+	margin-left: -5px;
+	margin-right: -5px;
+	margin-bottom: 10px;
+	font-size: 1.3em;
+	background-color: var(--navbar-color);
+	color: var(--navbar-text-color);
+	border-top-left-radius: var(--imagecard-border-radius);
+	border-top-right-radius: var(--imagecard-border-radius);
+	box-shadow: var(--box-shadow-level-3);
+}
+
+.image-group-expanded-header-smalltext {
+	padding: 10px;
+	color: #959595;
+	font-size: 1em;
+}
+
+.image-group-expanded-header-close {
+	display: inline;
+	float: right;
+	font-size: 1.4em;
+}
+
+.image-group-expanded-header-close:hover {
+	cursor: pointer;
+	color: var(--navbar-dropdown-color);
 }
 
 .imagecard {
@@ -230,18 +280,33 @@
 	opacity: 0.8;
 }
 
+.imagecard-group-size {
+	background-color: #FFF;
+	width: 70px;
+	height: calc(var(--imagecard-title-height) + 10px);
+	text-align: center;
+	line-height: calc(var(--imagecard-title-height) + 10px);
+	font-size: 1.2em;
+	vertical-align: middle;
+	border-radius: var(--imagecard-border-radius);
+	position: absolute;
+	top: 0;
+	right: 0;
+	opacity: 0.8;
+}
+
 .img-cam {
 	width: 100%;
 	height: auto;
 	border-radius: var(--imagecard-border-radius);
 }
 
-#morebutton-wrapper {
+#button-black-wrapper {
 	display: flex;
 	height: 100px;
 }
 
-#morebutton {
+#button-black {
 	border: none;
 	border-radius: var(--imagecard-border-radius);
 	margin: auto;
@@ -252,12 +317,12 @@
 	color: var(--navbar-text-color);
 }
 
-#morebutton:hover {
+#button-black:hover {
 	background-color: var(--navbar-dropdown-color);
 	color: var(--navbar-highlight-color);
 }
 
-#morebutton:active {
+#button-black:active {
 	background-color: var(--navbar-color);
 	color: var(--navbar-text-color);
 }
@@ -297,9 +362,19 @@
 		margin-right: -3px;
 	}
 
+	.image-group {
+		flex-basis: 40%;
+	}
+
 	.imagecard {
 		margin: 2px;
 		flex-basis: 40%;
+	}
+
+	.image-group-expanded .imagecard {
+		flex-basis: 90%;
+		margin-left: 5%;
+		margin-right: 5%;
 	}
 
 	.imagecard-title {

@@ -31,9 +31,13 @@ function ImageCard(props) {
         alt={props.pic.date}
         offset={300} />
       <div className="imagecard-title">
-        {props.timeago ? '#' + (props.num + 1) + ' - ' : ''}
         {title}
       </div>
+      {props.group &&
+        <div className="imagecard-group-size">
+          {props.groupSize} kuvaa
+        </div>
+      }
     </div>
   );
 }
@@ -48,43 +52,195 @@ function ImagesContainer(props) {
   var hour;
 
   // Render day and hour changes between images
-  props.images.forEach(function(pic, index) {
+  props.images.forEach(function(pic) {
     dayChanged = false;
     picDate = new Date(pic.date);
 
-    if(picDate.getDate() !== day) {
-      dayChanged = true;
-      day = picDate.getDate();
+    if(props.disableDividers !== true) {
+      if(picDate.getDate() !== day) {
+        dayChanged = true;
+        day = picDate.getDate();
 
-      // New divider
-      elements.push(
-        <div key={'divider-day ' + picDate} className="images-divider">
-          {getNaturalDate(picDate)}
-        </div>
-      );
-    }
+        // New divider
+        elements.push(
+          <div key={'divider-day ' + picDate} className="images-divider">
+            {getNaturalDate(picDate)}
+          </div>
+        );
+      }
 
-    if(picDate.getHours() !== hour || dayChanged) {
-      hour = picDate.getHours();
+      if(picDate.getHours() !== hour || dayChanged) {
+        hour = picDate.getHours();
 
-      // New divider
-      elements.push(
-        <div key={'divider-hour ' + picDate} className="images-divider images-divider-minor">
-          {'klo ' + (hour.toString().length === 1 ? '0' + hour.toString() : hour.toString())}
-        </div>
-      );
+        // New divider
+        elements.push(
+          <div key={'divider-hour ' + picDate} className="images-divider images-divider-minor">
+            {'klo ' + (hour.toString().length === 1 ? '0' + hour.toString() : hour.toString())}
+          </div>
+        );
+      }
     }
 
     elements.push(
       <ImageCard key={pic._id}
         pic={pic}
-        timeago={props.timeago}
-        num={index} />
+        timeago={props.timeago} />
     );
   });
 
   return(
     <div className="images-container">
+      {elements}
+    </div>
+  )
+}
+
+
+
+class ImageGroup extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      open: false
+    }
+  }
+
+  expandCardClicked = false;
+
+  componentDidUpdate() {
+    if(this.expandCardClicked){
+      var scrollPos = document.getElementById('image-group-' + this.props.images[this.props.images.length - 1]._id).offsetTop;
+      window.scrollTo(0, scrollPos - 100);
+      this.expandCardClicked = false;
+    }
+  }
+
+  expandCard() {
+    this.setState(prevState => ({
+      open: !prevState.open
+    }));
+
+    this.expandCardClicked = true;
+  }
+
+  render() {
+    // First image (by date) as cover
+    const cover = this.props.images[this.props.images.length - 1];
+    var content;
+
+    if(!this.state.open) {
+      content = (
+        <div className="image-group" id={'image-group-' + cover._id} onClick={this.expandCard.bind(this)}>
+          <ImageCard          
+            pic={cover}
+            timeago={this.props.timeago}
+            group={true}
+            groupSize={this.props.images.length} />
+        </div>
+      );
+
+    } else {
+
+      content = (
+        <div className="image-group-expanded" id={'image-group-' + cover._id}>
+          <div className="image-group-expanded-header">
+            {getNaturalTime(new Date(this.props.images[0].date)) + 
+            ' - ' + 
+            getNaturalTime(new Date(this.props.images[this.props.images.length - 1].date))}
+            <span className="image-group-expanded-header-smalltext">{this.props.images.length + ' kuvaa'}</span>
+            <div className="image-group-expanded-header-close" onClick={this.expandCard.bind(this)}>
+              <span className="glyphicon glyphicon-remove" aria-hidden="true"></span>
+            </div>
+          </div>
+            <ImagesContainer images={this.props.images} timeago={false} disableDividers={true} />
+            <div id="button-black-wrapper">
+              <button id="button-black" onClick={this.expandCard.bind(this)}>Sulje</button>
+            </div>
+        </div>
+      );
+    }
+
+    return content;
+  }
+}
+
+
+
+function ImageGroupsContainer(props) {
+  if(props.images.length === 0) {
+    return(<div className="images-divider">Ladataan...</div>);
+  }
+
+  var elements = [];
+  var picDate;
+  var day;
+  var dayChanged = false;
+  var hour;
+  const groupTimeInterval = 1000 * 60 * 2; // In milliseconds
+  var groupDate;
+  var currentGroup = {
+    date: undefined,
+    images: []
+  };
+  var groups = [];
+
+  // Group images that are close to the same time together
+  props.images.forEach(function(pic) {
+    picDate = new Date(pic.date);
+
+    if(currentGroup.date === undefined) {
+      currentGroup.date = picDate;
+    }
+
+    // If dates differ more than set interval
+    if(currentGroup.date - picDate > groupTimeInterval) {
+      // Create a new group
+      groups.push(currentGroup);
+      currentGroup = {
+        date: undefined,
+        images: []
+      };
+    }
+
+    currentGroup.images.push(pic);
+  });
+
+  // Push last group
+  groups.push(currentGroup);
+
+  // Render day and hour changes between groups
+  groups.forEach(function(group) {
+    dayChanged = false;
+    groupDate = new Date(group.date);
+
+    if(groupDate.getDate() !== day) {
+      dayChanged = true;
+      day = groupDate.getDate();
+
+      // New divider
+      elements.push(
+        <div key={'divider-day ' + groupDate} className="images-divider">
+          {getNaturalDate(groupDate)}
+        </div>
+      );
+    }
+
+    if(groupDate.getHours() !== hour || dayChanged) {
+      hour = groupDate.getHours();
+
+      // New divider
+      elements.push(
+        <div key={'divider-hour ' + groupDate} className="images-divider images-divider-minor">
+          {'klo ' + (hour.toString().length === 1 ? '0' + hour.toString() : hour.toString())}
+        </div>
+      );
+    }
+
+    elements.push(<ImageGroup key={'image-group ' + group.date} images={group.images} timeago={props.timeago} />);
+  });
+
+  return(
+    <div className="image-groups-container">
       {elements}
     </div>
   )
@@ -129,7 +285,7 @@ class Day extends Component {
           {this.props.day}.{this.props.month + 1}.
           <small>{' ' + this.props.pics.length + ' kuvaa'}</small>
         </h4>
-        <ImagesContainer images={imgs} timeago={false} />
+        {this.state.open ? <ImageGroupsContainer images={imgs} timeago={false} /> : ''}
       </div>
     );
   }
@@ -266,13 +422,13 @@ class NewImages extends Component {
 
     // Fetch data
     if(!loadMore) {
-      fetch('api/images/new?n=20&camera=' + propsUsed.camera, {headers: {'x-access-token': token}})
+      fetch('api/images/new?n=500&camera=' + propsUsed.camera, {headers: {'x-access-token': token}})
         .then(response => response.json())
         .then(responseJson => this.setState({ images: responseJson }));
 
     } else {
       var before = '&before=' + this.state.images[this.state.images.length - 1]._id;
-      fetch('api/images/new?n=20&camera=' + propsUsed.camera + before, {headers: {'x-access-token': token}})
+      fetch('api/images/new?n=500&camera=' + propsUsed.camera + before, {headers: {'x-access-token': token}})
         .then(response => response.json())
         .then(responseJson => this.setState(prevState => ({ images: prevState.images.concat(responseJson) })));
     }
@@ -285,9 +441,9 @@ class NewImages extends Component {
   render() {
     return(
       <div>
-        <ImagesContainer images={this.state.images} timeago={true} />
-        <div id="morebutton-wrapper">
-            <button id="morebutton" onClick={this.loadMoreImages.bind(this)}>Lisää</button>
+        <ImageGroupsContainer images={this.state.images} timeago={true} />
+        <div id="button-black-wrapper">
+            <button id="button-black" onClick={this.loadMoreImages.bind(this)}>Lisää</button>
         </div>
       </div>
     );
